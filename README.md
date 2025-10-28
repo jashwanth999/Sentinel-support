@@ -57,7 +57,17 @@ Sentinel Support is a full-stack demo for card-fraud triage and dispute case man
 
 ### Quick Links
 - Dashboard → http://localhost:3000/dashboard
+<img width="500" height="330" alt="Image" src="https://github.com/user-attachments/assets/35326b44-7e51-4225-a800-4cfc95eefb2f" />
+
 - Alerts → http://localhost:3000/alerts
+<img width="500" height="330" alt="Image" src="https://github.com/user-attachments/assets/5211962b-d81e-4f02-a16e-934a8b18bb6f" />
+
+<img width="500" height="330" alt="Image" src="https://github.com/user-attachments/assets/fc566875-934a-48f7-b99d-207c13cf65f5" />
+
+- Alerts → http://localhost:3000/customer/11111111-1111-1111-1111-111111111111
+
+<img width="500" height="330" alt="Image" src="https://github.com/user-attachments/assets/67102392-4237-4811-a8e2-eb07b6b7f180" />
+
 - Metrics → http://localhost:3001/metrics
 
 ---
