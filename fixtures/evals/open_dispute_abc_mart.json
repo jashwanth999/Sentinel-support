@@ -1,15 +1,18 @@
 {
   "title": "Open Dispute",
   "description": "ABC Mart alert should surface the open dispute workflow with policy 10.4.",
-  "successMessage": "Passed",
+  "successMessage": "Open dispute recommended",
   "alertId": "bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
   "customerId": "22222222-2222-2222-2222-222222222222",
   "expectations": {
-    "risk": "high",
-    "action": "freeze_card",
-    "label": "Freeze Card",
-    "otp": "123456",
+    "risk": "medium",
+    "action": "open_dispute",
+    "label": "Open Dispute",
     "cardId": "44444444-4444-4444-4444-444444444444",
-    "txnId": "99999999-9999-9999-9999-999999999999"
+    "txnId": "99999999-9999-9999-9999-999999999999",
+    "actionStates": {
+      "freeze": "not_required",
+      "dispute": "available"
+    }
   }
 }

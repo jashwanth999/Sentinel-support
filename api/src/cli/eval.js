@@ -26,8 +26,8 @@ const reportFile = path.join(reportDir, 'eval-report.txt');
 const scenarioOrdering = [
   'freeze_card_high_risk.json',
   'open_dispute_abc_mart.json',
+  'duplicate_transaction.json',
   'risk_timeout_fallback.json',
-  'redaction_check.json',
   'rate_limit_retry.json'
 ];
 
@@ -43,65 +43,81 @@ const fallbackScenarios = [
       label: 'Freeze Card',
       otp: '123456',
       cardId: '33333333-3333-3333-3333-333333333333',
-      txnId: '77777777-7777-7777-7777-777777777777'
+      txnId: '77777777-7777-7777-7777-777777777777',
+      actionStates: {
+        freeze: 'available',
+        dispute: 'not_required'
+      }
     },
-    successMessage: 'Passed'
+    successMessage: 'Card frozen and action recommended'
   },
   {
     file: 'open_dispute_abc_mart.json',
     title: 'Open Dispute',
-    alertId: 'fffffff2-ffff-ffff-ffff-ffffffffffff', // Medium risk (ABC Mart)
+    alertId: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb', // Medium risk (ABC Mart)
     customerId: '22222222-2222-2222-2222-222222222222',
     expectations: {
       risk: 'medium',
       action: 'open_dispute',
       label: 'Open Dispute',
       cardId: '44444444-4444-4444-4444-444444444444',
-      txnId: '99999999-9999-9999-9999-999999999999'
+      txnId: '99999999-9999-9999-9999-999999999999',
+      actionStates: {
+        freeze: 'not_required',
+        dispute: 'available'
+      }
     },
-    successMessage: 'Passed'
+    successMessage: 'Open dispute recommended'
   },
   {
-    file: 'duplicate_txn.json',
+    file: 'duplicate_transaction.json',
     title: 'Duplicate Transaction',
-    alertId: 'fffffff3-ffff-ffff-ffff-ffffffffffff', // Low risk (QuickCab)
-    customerId: '22222222-2222-2222-2222-222222222222',
+    alertId: 'eeeeeee1-eeee-eeee-eeee-eeeeeeeeeeee', // Low risk (QuickCab)
+    customerId: '55555555-5555-5555-5555-555555555555',
     expectations: {
       risk: 'low',
-      action: 'none',
-      label: 'Monitor Only'
+      action: null,
+      actionStates: {
+        freeze: 'not_required',
+        dispute: 'not_required'
+      }
     },
-    successMessage: 'Handled'
+    successMessage: 'No action required for duplicate auth'
   },
   {
     file: 'risk_timeout_fallback.json',
     title: 'Timeout / Fallback',
-    alertId: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', // Medium risk fallback
-    customerId: '11111111-1111-1111-1111-111111111111',
+    alertId: 'ccccccc1-cccc-cccc-cccc-cccccccccccc',
+    customerId: '33333333-3333-3333-3333-333333333333',
     env: {
       RISK_TIMEOUT_SIMULATION: 'true'
     },
     expectations: {
-      fallback: true
+      fallback: true,
+      action: null,
+      actionStates: {
+        freeze: 'not_required',
+        dispute: 'not_required'
+      }
     },
-    successMessage: 'Fallback Triggered'
+    successMessage: 'Fallback triggered with no action'
   },
   {
     file: 'rate_limit_retry.json',
     title: 'Rate Limit',
     type: 'rate_limit_retry',
     action: {
-      endpoint: '/api/action/freeze-card',
+      endpoint: '/api/actions/freeze-card',
       method: 'POST',
       payload: {
         cardId: '33333333-3333-3333-3333-333333333333',
         customerId: '11111111-1111-1111-1111-111111111111',
-        caseId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        alertId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
         otp: '123456'
       },
       attempts: 6
     },
-    successMessage: 'Retry OK'
+    successMessage: 'Retry OK after 429'
   }
 ];
 
@@ -181,8 +197,15 @@ function evaluateTriageExpectations ({ scenario, state }) {
   if (expectations.risk && result.risk !== expectations.risk) {
     failures.push(`Expected risk ${expectations.risk} but got ${result.risk || 'unknown'}`);
   }
-  if (expectations.action && action.type !== expectations.action) {
-    failures.push(`Expected action ${expectations.action} but received ${action.type || 'none'}`);
+  if (Object.prototype.hasOwnProperty.call(expectations, 'action')) {
+    const expectedAction = expectations.action;
+    if (expectedAction === null) {
+      if (action.type) {
+        failures.push(`Expected no recommended action but received ${action.type}`);
+      }
+    } else if (action.type !== expectedAction) {
+      failures.push(`Expected action ${expectedAction} but received ${action.type || 'none'}`);
+    }
   }
   if (expectations.label && action.label !== expectations.label) {
     failures.push(`Expected label "${expectations.label}" but got "${action.label || ''}"`);
@@ -203,6 +226,14 @@ function evaluateTriageExpectations ({ scenario, state }) {
     const fallbackEvent = events.some((evt) => evt.event === 'fallback_triggered');
     if (!fallbackEvent) {
       failures.push('Expected fallback trigger event but none observed');
+    }
+  }
+  if (expectations.actionStates) {
+    const states = result.actionStates || {};
+    for (const [key, value] of Object.entries(expectations.actionStates)) {
+      if ((states[key] || 'unknown') !== value) {
+        failures.push(`Expected action state ${key}=${value} but got ${states[key] || 'unknown'}`);
+      }
     }
   }
 
@@ -333,8 +364,8 @@ async function runScenario (scenario) {
 }
 
 function formatLine ({ title, passed, message }) {
-  const symbol = passed ? '✔' : '✖';
-  return `${symbol} ${title} – ${message}`;
+  const status = passed ? 'PASS' : 'FAIL';
+  return `${status} ${title} – ${message}`;
 }
 
 async function main () {

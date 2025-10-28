@@ -10,7 +10,9 @@ const demoAlerts = [
     status: 'OPEN',
     merchant: 'Neon Electronics',
     amount_cents: 278500,
-    currency: 'USD'
+    currency: 'USD',
+    card_status: 'ACTIVE',
+    fallback_used: false
   },
   {
     id: 'bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
@@ -21,7 +23,9 @@ const demoAlerts = [
     status: 'OPEN',
     merchant: 'ABC Mart',
     amount_cents: 499900,
-    currency: 'USD'
+    currency: 'USD',
+    card_status: 'ACTIVE',
+    dispute_status: null
   },
   {
     id: 'eeeeeee1-eeee-eeee-eeee-eeeeeeeeeeee',
@@ -32,7 +36,10 @@ const demoAlerts = [
     status: 'OPEN',
     merchant: 'QuickCab',
     amount_cents: 1899,
-    currency: 'USD'
+    currency: 'USD',
+    card_status: 'ACTIVE',
+    dispute_status: null,
+    fallback_used: false
   },
   {
     id: 'demo-alert',
@@ -43,7 +50,10 @@ const demoAlerts = [
     status: 'OPEN',
     merchant: 'Demo Superstore',
     amount_cents: 250000,
-    currency: 'USD'
+    currency: 'USD',
+    card_status: 'ACTIVE',
+    dispute_status: null,
+    fallback_used: false
   }
 ];
 

@@ -6,7 +6,7 @@ const router = express.Router();
 router.get('/summary', async (req, res, next) => {
   try {
     const [alertsResult, frozenResult, disputesResult, fallbackResult] = await Promise.all([
-      pool.query('SELECT COUNT(*) AS count FROM alerts'),
+      pool.query("SELECT COUNT(*) AS count FROM alerts WHERE status IS DISTINCT FROM 'CLOSED'"),
       pool.query("SELECT COUNT(*) AS count FROM cards WHERE status = 'FROZEN'"),
       pool.query("SELECT COUNT(*) AS count FROM cases WHERE status = 'OPEN' AND type = 'dispute'"),
       pool.query('SELECT COUNT(*) AS count FROM triage_runs WHERE fallback_used = true')

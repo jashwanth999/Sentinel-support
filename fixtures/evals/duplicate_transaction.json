@@ -1,0 +1,15 @@
+{
+  "title": "Duplicate",
+  "description": "QuickCab alert should detect duplicate authorization with no action.",
+  "successMessage": "No action required for duplicate auth",
+  "alertId": "eeeeeee1-eeee-eeee-eeee-eeeeeeeeeeee",
+  "customerId": "55555555-5555-5555-5555-555555555555",
+  "expectations": {
+    "risk": "low",
+    "action": null,
+    "actionStates": {
+      "freeze": "not_required",
+      "dispute": "not_required"
+    }
+  }
+}

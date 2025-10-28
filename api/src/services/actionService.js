@@ -22,6 +22,31 @@ export async function freezeCard ({ cardId, customerId, alertId, otp, actor }) {
     };
   }
 
+  const { rows: cardRows } = await pool.query(
+    `
+      SELECT status
+      FROM cards
+      WHERE id = $1 AND customer_id = $2
+      LIMIT 1
+    `,
+    [cardId, customerId]
+  );
+
+  if (!cardRows.length) {
+    const err = new Error('card_not_found');
+    err.status = 404;
+    throw err;
+  }
+
+  const currentStatus = cardRows[0].status || 'ACTIVE';
+  if (currentStatus === 'FROZEN') {
+    return {
+      status: 'ALREADY_FROZEN',
+      message: 'Card already frozen',
+      cardStatus: currentStatus
+    };
+  }
+
   await pool.query(
     `
       UPDATE cards
@@ -86,7 +111,12 @@ export async function freezeCard ({ cardId, customerId, alertId, otp, actor }) {
     );
   }
 
-  return { status: 'FROZEN', message: 'Card frozen', caseId: freezeCaseId };
+  return {
+    status: 'FROZEN',
+    message: 'Card frozen successfully',
+    caseId: freezeCaseId,
+    cardStatus: 'FROZEN'
+  };
 }
 
 export async function openDispute ({ customerId, txnId, amountCents, reasonCode, actor, alertId }) {
@@ -104,6 +134,13 @@ export async function openDispute ({ customerId, txnId, amountCents, reasonCode,
     );
     if (existing.rows.length) {
       caseRow = existing.rows[0];
+      if (caseRow.status === 'OPEN') {
+        return {
+          caseId: caseRow.id,
+          status: 'ALREADY_DISPUTED',
+          message: 'Dispute already created for this alert'
+        };
+      }
       await pool.query(
         `
           UPDATE cases
@@ -149,6 +186,7 @@ export async function openDispute ({ customerId, txnId, amountCents, reasonCode,
 
   return {
     caseId: caseRow.id,
-    status: caseRow.status
+    status: caseRow.status,
+    message: 'Dispute opened'
   };
 }

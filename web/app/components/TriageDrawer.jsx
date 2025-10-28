@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { streamTriage, executeFreezeAction, executeDisputeAction } from '../lib/api';
 
-export default function TriageDrawer({ open, onClose, alert, runState, onEvents }) {
+export default function TriageDrawer({ open, onClose, alert, runState, onEvents, onActionComplete }) {
   const closeRef = useRef(null);
   const [otpOpen, setOtpOpen] = useState(false);
   const [otpValue, setOtpValue] = useState('');
@@ -13,9 +13,15 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
   const events = runState?.events || [];
   const summary = runState?.result;
   const action = summary?.recommendedAction;
+  const actionStates = summary?.actionStates || {};
   const risk = (summary?.risk || alert?.risk || '').toUpperCase();
   const fallbackUsed = Boolean(summary?.fallbackUsed);
   const knowledge = Array.isArray(summary?.kb) ? summary.kb : [];
+  const freezeCompleted = actionStates.freeze === 'completed';
+  const disputeCompleted = actionStates.dispute === 'completed';
+  const toUpper = (value, fallback = '') => (typeof value === 'string' ? value.toUpperCase() : fallback);
+  const cardStatusLabel = toUpper(summary?.alert?.cardStatus || summary?.cases?.freeze?.status, 'ACTIVE');
+  const disputeStatusLabel = toUpper(summary?.cases?.dispute?.status || summary?.alert?.disputeStatus, '—');
 
   useEffect(() => {
     if (!runState?.runId || !open) return () => {};
@@ -89,12 +95,81 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
       };
       const response = await executeFreezeAction(payload);
       const status = response.status || '';
+      if (status === 'ALREADY_FROZEN') {
+        setActionStatus({ variant: 'info', message: 'Card already frozen ✅' });
+        setOtpOpen(false);
+        const updatedActionStates = {
+          ...(summary?.actionStates || {}),
+          freeze: 'completed'
+        };
+        const nextResult = summary
+          ? {
+              ...summary,
+              recommendedAction: null,
+              actionStates: updatedActionStates,
+              cases: {
+                ...(summary?.cases || {}),
+                freeze: {
+                  ...((summary?.cases && summary.cases.freeze) || {}),
+                  status: 'FROZEN',
+                  id: response.caseId || (summary?.cases && summary.cases.freeze?.id) || null
+                }
+              },
+              alert: {
+                ...(summary?.alert || {}),
+                cardStatus: 'FROZEN',
+                status: 'CLOSED'
+              }
+            }
+          : null;
+        onEvents?.({
+          type: 'action_update',
+          payload: {
+            data: {
+              action: 'freeze_card',
+              status,
+              message: 'Card already frozen ✅',
+              caseId: response.caseId,
+              cardStatus: response.cardStatus || 'FROZEN',
+              nextResult
+            },
+            ts: new Date().toISOString()
+          }
+        });
+        onActionComplete?.();
+        return;
+      }
+
       const variant = status === 'FROZEN' ? 'success' : 'info';
-      const message = response.message || (status === 'FROZEN' ? 'Card frozen successfully.' : 'OTP verification required.');
+      const message = status === 'FROZEN'
+        ? 'Card frozen successfully ✅'
+        : response.message || 'OTP verification required.';
       setActionStatus({ variant, message });
       if (status === 'FROZEN') {
         setOtpOpen(false);
-        const nextResult = summary ? { ...summary, recommendedAction: null } : null;
+        const updatedActionStates = {
+          ...(summary?.actionStates || {}),
+          freeze: 'completed'
+        };
+        const nextResult = summary
+          ? {
+              ...summary,
+              recommendedAction: null,
+              actionStates: updatedActionStates,
+              cases: {
+                ...(summary?.cases || {}),
+                freeze: {
+                  id: response.caseId || (summary?.cases && summary.cases.freeze?.id) || null,
+                  status: 'FROZEN'
+                }
+              },
+              alert: {
+                ...(summary?.alert || {}),
+                cardStatus: 'FROZEN',
+                status: 'CLOSED'
+              }
+            }
+          : null;
         onEvents?.({
           type: 'action_update',
           payload: {
@@ -103,11 +178,13 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
               status,
               message,
               caseId: response.caseId,
+              cardStatus: response.cardStatus || 'FROZEN',
               nextResult
             },
             ts: new Date().toISOString()
           }
         });
+        onActionComplete?.();
       }
     } catch (err) {
       setActionStatus({ variant: 'error', message: friendlyError(err.message) });
@@ -131,23 +208,49 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
         reasonCode: action.reasonCode || '10.4',
         alertId: action.alertId || alert?.id
       });
-      setActionStatus({
-        variant: 'success',
-        message: response.caseId ? `Dispute opened – case ${response.caseId}.` : 'Dispute opened.'
-      });
-      const nextResult = summary ? { ...summary, recommendedAction: null } : null;
+      const status = response.status || 'OPEN';
+      if (status === 'ALREADY_DISPUTED') {
+        setActionStatus({ variant: 'info', message: 'Dispute already created 🧾' });
+      } else {
+        setActionStatus({ variant: 'success', message: response.caseId ? 'Dispute case created successfully 🧾' : 'Dispute opened 🧾' });
+      }
+      const updatedActionStates = {
+        ...(summary?.actionStates || {}),
+        dispute: 'completed'
+      };
+      const nextResult = summary
+        ? {
+            ...summary,
+            recommendedAction: null,
+            actionStates: updatedActionStates,
+            cases: {
+              ...(summary?.cases || {}),
+              dispute: {
+                id: response.caseId || (summary?.cases && summary.cases.dispute?.id) || null,
+                status: status === 'ALREADY_DISPUTED' ? 'OPEN' : status
+              }
+            },
+            alert: {
+              ...(summary?.alert || {}),
+              disputeStatus: 'OPEN',
+              status: 'IN_REVIEW'
+            }
+          }
+        : null;
       onEvents?.({
         type: 'action_update',
         payload: {
           data: {
             action: 'open_dispute',
-            status: response.status || 'OPEN',
+            status,
+            message: status === 'ALREADY_DISPUTED' ? 'Dispute already created 🧾' : 'Dispute case created successfully 🧾',
             caseId: response.caseId,
             nextResult
           },
           ts: new Date().toISOString()
         }
       });
+      onActionComplete?.();
     } catch (err) {
       setActionStatus({ variant: 'error', message: friendlyError(err.message) });
     } finally {
@@ -250,11 +353,37 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
                     {action.type.replace(/_/g, ' ')}
                   </span>
                 )}
+                <div className="mt-2 flex flex-col gap-1 text-xs text-slate-500">
+                  <p>
+                    Card Status:{' '}
+                    <span className={cardStatusLabel === 'FROZEN' ? 'text-emerald-400' : 'text-slate-200'}>
+                      {cardStatusLabel}
+                    </span>
+                  </p>
+                  <p>
+                    Dispute Status:{' '}
+                    <span className={disputeStatusLabel === 'OPEN' ? 'text-amber-300' : 'text-slate-200'}>
+                      {disputeStatusLabel}
+                    </span>
+                  </p>
+                </div>
               </div>
               {!action && (
                 <p className="text-xs text-slate-500">Monitor the account; no workflow required right now.</p>
               )}
-              {action?.type === 'freeze_card' && risk === 'HIGH' && (
+              {freezeCompleted && (
+                <p className="text-xs text-emerald-400">Card already frozen ✅</p>
+              )}
+              {freezeCompleted && (
+                <button
+                  type="button"
+                  disabled
+                  className="rounded bg-rose-900/40 px-3 py-2 text-sm font-medium text-rose-200/70"
+                >
+                  Freeze Card
+                </button>
+              )}
+              {action?.type === 'freeze_card' && risk === 'HIGH' && !freezeCompleted && (
                 <div className="space-y-2">
                   <button
                     type="button"
@@ -264,7 +393,7 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
                       setOtpOpen(true);
                     }}
                     className="rounded bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500 disabled:opacity-60"
-                    disabled={actionLoading}
+                    disabled={actionLoading || freezeCompleted}
                   >
                     Freeze Card
                   </button>
@@ -274,13 +403,25 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
                   </p>
                 </div>
               )}
-              {action?.type === 'open_dispute' && (
+              {disputeCompleted && (
+                <p className="text-xs text-emerald-400">Dispute already created 🧾</p>
+              )}
+              {disputeCompleted && (
+                <button
+                  type="button"
+                  disabled
+                  className="rounded bg-amber-900/40 px-3 py-2 text-sm font-medium text-amber-200/70"
+                >
+                  Open Dispute
+                </button>
+              )}
+              {action?.type === 'open_dispute' && !disputeCompleted && (
                 <div className="space-y-2">
                   <button
                     type="button"
                     onClick={handleDispute}
                     className="rounded bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-60"
-                    disabled={actionLoading}
+                    disabled={actionLoading || disputeCompleted}
                   >
                     Open Dispute
                   </button>
@@ -317,6 +458,9 @@ export default function TriageDrawer({ open, onClose, alert, runState, onEvents 
                     <span>{evt.event}</span>
                     <span>{new Date(evt.ts).toLocaleTimeString()}</span>
                   </div>
+                  {evt.data?.message && (
+                    <p className="mt-1 text-xs text-slate-200">{evt.data.message}</p>
+                  )}
                   <pre className="whitespace-pre-wrap break-words text-xs text-slate-300">
                     {JSON.stringify(evt.data, null, 2)}
                   </pre>

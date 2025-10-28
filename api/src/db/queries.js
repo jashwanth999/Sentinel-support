@@ -212,9 +212,11 @@ export async function getAlertWithDetails (alertId) {
         t.currency,
         t.card_id,
         t.mcc,
-        t.ts
+        t.ts,
+        c.status AS card_status
       FROM alerts a
       LEFT JOIN transactions t ON t.id = a.suspect_txn_id
+      LEFT JOIN cards c ON c.id = t.card_id
       WHERE a.id = $1
       LIMIT 1
     `,
@@ -335,4 +337,25 @@ export async function hasLikelyDuplicateAuth ({ customerId, merchant, amountCent
   );
   const count = Number(rows?.[0]?.count || 0);
   return count >= 2;
+}
+
+export async function getCaseByAlert ({ alertId, type }) {
+  if (!alertId) return null;
+  const params = [alertId];
+  let whereClause = 'alert_id = $1';
+  if (type) {
+    params.push(type);
+    whereClause += ' AND type = $2';
+  }
+  const { rows } = await pool.query(
+    `
+      SELECT id, status, reason_code
+      FROM cases
+      WHERE ${whereClause}
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    params
+  );
+  return rows[0] || null;
 }

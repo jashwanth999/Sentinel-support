@@ -14,6 +14,7 @@ router.post('/freeze-card', withRole('agent'), async (req, res, next) => {
     res.json({
       status: result.status,
       caseId: result.caseId,
+      cardStatus: result.cardStatus,
       requestId: res.locals.requestId,
       message: result.message
     });
@@ -30,7 +31,8 @@ router.post('/open-dispute', withRole('agent'), async (req, res, next) => {
     res.json({
       caseId: result.caseId,
       status: result.status || 'OPEN',
-      requestId: res.locals.requestId
+      requestId: res.locals.requestId,
+      message: result.message
     });
   } catch (err) {
     next(err);

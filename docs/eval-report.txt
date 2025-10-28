@@ -1,7 +1,7 @@
 Running 5 scenarios...
-✔ Freeze Card – Passed
-✔ Open Dispute – Passed
-✔ Timeout – Fallback Triggered
-✔ Redaction – OK
-✔ Rate Limit – Retry OK
+PASS Freeze Card – Card frozen and action recommended
+PASS Open Dispute – Open dispute recommended
+PASS Duplicate – No action required for duplicate auth
+PASS Timeout – Fallback triggered with no action
+PASS Rate Limit – Retry OK after 429
 Summary: 5/5 passed

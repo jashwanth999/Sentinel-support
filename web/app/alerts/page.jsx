@@ -1,21 +1,31 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import VirtualTable from '../components/VirtualTable';
 import TriageDrawer from '../components/TriageDrawer';
 import { fetchAlerts, startTriage } from '../lib/api';
 
-export default function AlertsPage() {
+const FILTER_DESCRIPTIONS = {
+  all: 'All alerts currently in the queue.',
+  frozen: 'Alerts with cards that have already been frozen.',
+  'open-disputes': 'Alerts tied to an open dispute case.',
+  fallback: 'Alerts whose last triage run triggered fallback logic.'
+};
+
+function AlertsPageContent() {
   const [alerts, setAlerts] = useState([]);
   const [selected, setSelected] = useState(null);
   const [triageState, setTriageState] = useState({ events: [] });
   const [error, setError] = useState(null);
   const [rateLimitUntil, setRateLimitUntil] = useState(0);
+  const searchParams = useSearchParams();
+  const activeFilter = searchParams?.get('filter') || 'all';
 
   const loadAlerts = useCallback(async () => {
     try {
       const data = await fetchAlerts();
-      setAlerts(data.items);
+      setAlerts(data.items || []);
     } catch (err) {
       console.error(err);
     }
@@ -26,6 +36,28 @@ export default function AlertsPage() {
   }, [loadAlerts]);
 
   const isRateLimited = rateLimitUntil > Date.now();
+
+  const filteredAlerts = useMemo(() => {
+    if (!alerts?.length) return [];
+    if (activeFilter === 'all') return alerts;
+    const toUpper = (value) => (typeof value === 'string' ? value.toUpperCase() : value);
+    return alerts.filter((row) => {
+      const cardStatus = toUpper(row.card_status || row.cardStatus || '');
+      const alertStatus = toUpper(row.status || '');
+      const disputeStatus = toUpper(row.dispute_status || row.disputeStatus || '');
+      const fallbackUsed = Boolean(row.fallback_used || row.fallbackUsed);
+      switch (activeFilter) {
+        case 'frozen':
+          return cardStatus === 'FROZEN' || alertStatus === 'CLOSED';
+        case 'open-disputes':
+          return disputeStatus === 'OPEN' || alertStatus === 'IN_REVIEW';
+        case 'fallback':
+          return fallbackUsed;
+        default:
+          return true;
+      }
+    });
+  }, [alerts, activeFilter]);
 
   const handleOpenTriage = async (row) => {
     if (isRateLimited) return;
@@ -58,11 +90,21 @@ export default function AlertsPage() {
   return (
     <div className="relative">
       <h2 className="mb-4 text-xl font-semibold">Alerts Queue</h2>
+      <div className="mb-3 flex flex-col gap-1 text-xs text-slate-400">
+        <span>
+          Active filter:{' '}
+          <span className="uppercase text-slate-200">{activeFilter.replace(/-/g, ' ')}</span>
+        </span>
+        <span>{FILTER_DESCRIPTIONS[activeFilter] || FILTER_DESCRIPTIONS.all}</span>
+      </div>
       {error && (
         <p className="mb-3 text-sm text-amber-400">{error}</p>
       )}
+      {!filteredAlerts.length && (
+        <p className="mb-3 text-sm text-slate-500">No alerts match this view right now.</p>
+      )}
       <VirtualTable
-        rows={alerts}
+        rows={filteredAlerts}
         rowRenderer={(row) => (
           <button
             type="button"
@@ -86,6 +128,7 @@ export default function AlertsPage() {
           setSelected(null);
           setTriageState({ events: [] });
         }}
+        onActionComplete={loadAlerts}
         onEvents={(evt) => {
           setTriageState((prev) => {
             const payload = evt.payload.data || evt.payload;
@@ -111,5 +154,13 @@ export default function AlertsPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function AlertsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AlertsPageContent />
+    </Suspense>
   );
 }
