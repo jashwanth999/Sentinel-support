@@ -1,0 +1,1 @@
+-- Base schema ensured via init.sql; additional indexes or constraints can be added here.

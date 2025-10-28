@@ -1,0 +1,52 @@
+{
+  "info": {
+    "name": "Sentinel Support API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Customer Transactions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/customer/11111111-1111-1111-1111-111111111111/transactions?limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "customer", "11111111-1111-1111-1111-111111111111", "transactions"],
+          "query": [{"key": "limit", "value": "50"}]
+        }
+      }
+    },
+    {
+      "name": "Start Triage",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "X-API-Key", "value": "dev-api-key"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"alertId\": \"aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa\",\n  \"customerId\": \"11111111-1111-1111-1111-111111111111\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/triage",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "triage"]
+        }
+      }
+    }
+  ]
+}

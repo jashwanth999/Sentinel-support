@@ -1,0 +1,20 @@
+[
+  {
+    "id": "2c84f6c0-1a2b-4d3a-91aa-0fda3025f6c1",
+    "title": "Chargeback Policy 10.4",
+    "anchor": "policy-10-4",
+    "content_text": "Chargeback policy 10.4: Cardholder disputes for goods not received require merchant outreach within 3 business days."
+  },
+  {
+    "id": "ae9b44fd-8a07-4cf7-b9d3-6b74e648cfc3",
+    "title": "Duplicate Auth Handling",
+    "anchor": "dup-auth",
+    "content_text": "Duplicate authorizations should not be disputed if the capture reverses within 24 hours. Escalate only if capture persists beyond 48 hours."
+  },
+  {
+    "id": "f1c2d3e4-5b6a-47c8-9d0e-1f2a3b4c5d6e",
+    "title": "Merchant Contact Directory",
+    "anchor": "merchant-directory",
+    "content_text": "For duplicate transactions or missing goods escalations, contact support@abcmart.com or reach the escalation hotline at 4155551234567890 for urgent fraud coordination."
+  }
+]

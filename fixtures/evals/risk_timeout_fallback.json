@@ -1,0 +1,16 @@
+{
+  "title": "Timeout",
+  "description": "When the fraud engine times out the system should fall back to manual review.",
+  "successMessage": "Fallback Triggered",
+  "alertId": "ccccccc1-cccc-cccc-cccc-cccccccccccc",
+  "customerId": "33333333-3333-3333-3333-333333333333",
+  "env": {
+    "RISK_TIMEOUT_SIMULATION": "true"
+  },
+  "expectations": {
+    "action": "freeze_card",
+    "label": "Freeze Card",
+    "otp": "123456",
+    "fallback": true
+  }
+}

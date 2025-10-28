@@ -1,0 +1,33 @@
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# Env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+api/.env
+web/.env
+
+# Logs
+logs/
+*.log
+*.out
+*.err
+
+# Build outputs
+web/.next/
+web/out/
+api/dist/
+
+# Docker
+docker-data/
+
+# Mac
+.DS_Store

@@ -1,0 +1,7 @@
+Running 5 scenarios...
+✔ Freeze Card – Passed
+✔ Open Dispute – Passed
+✔ Timeout – Fallback Triggered
+✔ Redaction – OK
+✔ Rate Limit – Retry OK
+Summary: 5/5 passed

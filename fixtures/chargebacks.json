@@ -1,0 +1,16 @@
+[
+  {
+    "case_id": "bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "customer_id": "22222222-2222-2222-2222-222222222222",
+    "txn_id": "99999999-9999-9999-9999-999999999999",
+    "status": "OPEN",
+    "reason_code": "10.4"
+  },
+  {
+    "case_id": "ccccccc2-cccc-cccc-cccc-cccccccccccc",
+    "customer_id": "33333333-3333-3333-3333-333333333333",
+    "txn_id": "ccccccc3-cccc-cccc-cccc-cccccccccccc",
+    "status": "CLOSED",
+    "reason_code": "4837"
+  }
+]

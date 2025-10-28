@@ -1,0 +1,14 @@
+[
+  {
+    "id": "policy-otp",
+    "code": "OTP_REQUIRED",
+    "title": "OTP required for card freeze",
+    "content_text": "Agents must collect a valid one-time passcode from the customer prior to freezing any card for fraud containment."
+  },
+  {
+    "id": "policy-dispute",
+    "code": "DISPUTE_10_4",
+    "title": "Dispute reason code 10.4",
+    "content_text": "Use reason code 10.4 for cardholder disputes when goods or services were not provided by the merchant."
+  }
+]

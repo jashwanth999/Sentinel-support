@@ -1,0 +1,17 @@
+{
+  "title": "Rate Limit",
+  "description": "API rate limiting should be handled with an automatic retry to complete the freeze.",
+  "successMessage": "Retry OK",
+  "type": "rate_limit_retry",
+  "action": {
+    "endpoint": "/api/actions/freeze-card",
+    "method": "POST",
+    "payload": {
+      "cardId": "33333333-3333-3333-3333-333333333333",
+      "customerId": "11111111-1111-1111-1111-111111111111",
+      "caseId": "aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "otp": "123456"
+    },
+    "attempts": 6
+  }
+}
